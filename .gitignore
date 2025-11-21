@@ -11,12 +11,6 @@
 *.gch
 *.pch
 
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
 # Compiled Dynamic libraries
 *.so
 *.dylib
@@ -37,5 +31,11 @@
 *.out
 *.app
 
-# debug information files
-*.dwo
+
+
+#themes/CMakeFiles/
+#themes/CMakeCache.txt/
+#.idea/
+#cmake_install.cmake/
+#Makefile/
+#cmake-themes-debug/
