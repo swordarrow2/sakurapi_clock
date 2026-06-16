@@ -27,12 +27,15 @@ bool TextureManager::init(SDL_Renderer *renderer) {
         }
         texturesMap.clear();
         backgroundFrames.clear(); // 清空帧列表
-        std::string k0 = ConfigManager::getInstance().getString("background.file");
-        if (k0.find('.') == std::string::npos) {
-            processImageFolder(k0, renderer);
+        std::string bgDir = ConfigManager::getInstance().getString("background.dir");
+        if (!bgDir.empty()) {
+            processImageFolder(bgDir, renderer);
         } else {
-            texturesMap["bg_0"] = loadTexture(k0, renderer);
-            backgroundFrames.push_back("bg_0");
+            std::string bgFile = ConfigManager::getInstance().getString("background.file");
+            if (!bgFile.empty()) {
+                texturesMap["bg_0"] = loadTexture(bgFile, renderer);
+                backgroundFrames.push_back("bg_0");
+            }
         }
     } catch (const std::exception &e) {
         cerr << e.what() << endl;

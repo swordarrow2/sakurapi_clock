@@ -75,6 +75,16 @@ root@sakurapi-rk3308b:~/sakurapi_clock/build$ ./sakurapi_clock --pack theme_sana
 
 The packaged theme will be automatically placed in the `build/theme` directory.
 
+#### Pack All Themes
+
+Run the program with `--packall` to pack all themes at once:
+
+```
+./sakurapi_clock --packall
+```
+
+All themes from the `themes` directory will be packed and placed in the `build/theme` directory.
+
 #### Unpack a Theme
 
 1. Go to the `build/theme directory` and check the theme you want to unpack.
@@ -99,6 +109,24 @@ root@sakurapi-rk3308b:~/sakurapi_clock/build$ ./sakurapi_clock theme_sanae
 ```
 
 The program will launch with the specified theme and automatically package the theme into the `build/theme` directory
+
+#### Auto-start on Boot
+
+Run the program with `--autorun` to install a systemd service for auto-start on boot:
+
+```
+sudo ./sakurapi_clock --autorun
+```
+
+This will:
+- Create a systemd service file at `/etc/systemd/system/sakurapi_clock.service`
+- Enable the service to start automatically on boot
+
+Useful commands:
+- `sudo systemctl start sakurapi_clock` - Start service now
+- `sudo systemctl stop sakurapi_clock` - Stop service
+- `sudo systemctl status sakurapi_clock` - Check service status
+- `sudo systemctl disable sakurapi_clock` - Disable auto-start
 
 #### Others
 

@@ -35,7 +35,7 @@ void BackgroundManager::update() {
 }
 
 void BackgroundManager::render(SDL_Renderer *renderer) {
-    int delay = ConfigManager::getInstance().getInt("cfg.delay");
+    int delay = ConfigManager::getInstance().getInt("cfg.delay", 1);
 #ifdef UBUNTU
     if (delay * 60 < showedFrames && delay > 0) {
         setNextStyle(renderer);

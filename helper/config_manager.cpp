@@ -100,7 +100,7 @@ bool ConfigManager::parseConfigFromString(const string &configContent, map<strin
             key.erase(key.find_last_not_of(" \t\r\n") + 1);
             value.erase(0, value.find_first_not_of(" \t\r\n"));
             value.erase(value.find_last_not_of(" \t\r\n") + 1);
-            if (!currentSection.empty()) {
+            if (!currentSection.empty() && key.find(currentSection + ".") != 0) {
                 key = currentSection + "." + key;
             }
             configMap[key] = value;

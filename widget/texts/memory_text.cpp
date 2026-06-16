@@ -46,10 +46,10 @@ void MemoryText::drawProgressBar(SDL_Renderer *renderer, int x, int y, int width
 
 void MemoryText::render(SDL_Renderer *renderer) {
     DraggableText::render(renderer);
-    drawProgressBar(renderer, rect.x + rect.w + 2, rect.y + rect.h / 4, 100,
-                    ConfigManager::getInstance().getInt("memory_state.size") / 2,
-                    memoryInfo.usagePercent, (SDL_Color){50, 50, 50, 255},
-                    (SDL_Color){0, 200, 0, 255});
+    // drawProgressBar(renderer, rect.x + rect.w + 2, rect.y + rect.h / 4, 100,
+    //                 ConfigManager::getInstance().getInt("memory_state.size") / 2,
+    //                 memoryInfo.usagePercent, (SDL_Color){50, 50, 50, 255},
+    //                 (SDL_Color){0, 200, 0, 255});
 }
 
 MemoryText::MemoryInfo MemoryText::getMemoryInfo() {

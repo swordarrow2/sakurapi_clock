@@ -75,6 +75,16 @@ root@sakurapi-rk3308b:~/sakurapi_clock/build$ ./sakurapi_clock --pack theme_sana
 
 打包的主题会自动放在build/theme目录
 
+#### 打包所有主题
+
+使用 `--packall` 参数打包所有主题：
+
+```
+./sakurapi_clock --packall
+```
+
+`themes` 目录下的所有主题都会被打包并放在 `build/theme` 目录。
+
 #### 解包主题
 
 1. 进入build/theme内查看想解包的主题
@@ -99,6 +109,28 @@ root@sakurapi-rk3308b:~/sakurapi_clock/build$ ./sakurapi_clock theme_sanae
 ```
 
 程序将会以指定主题启动，并且会自动打包主题放置在build/theme目录
+
+#### 自行设计主题
+
+可参考themes/theme_sakura_pi主题的config.ini进行修改
+
+#### 开机自启
+
+使用 `--autorun` 参数安装 systemd 服务实现开机自启：
+
+```
+sudo ./sakurapi_clock --autorun
+```
+
+该命令会：
+- 在 `/etc/systemd/system/sakurapi_clock.service` 创建 systemd 服务文件
+- 启用服务，下次开机自动启动
+
+常用命令：
+- `sudo systemctl start sakurapi_clock` - 立即启动服务
+- `sudo systemctl stop sakurapi_clock` - 停止服务
+- `sudo systemctl status sakurapi_clock` - 查看服务状态
+- `sudo systemctl disable sakurapi_clock` - 禁用开机自启
 
 #### 其它
 

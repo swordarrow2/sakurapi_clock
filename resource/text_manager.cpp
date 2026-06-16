@@ -51,7 +51,7 @@ void TextManager::init() {
     for (auto &name: Globals::elements) {
         map<string, DraggableText *>::iterator it = texts.find(name);
         if (it == texts.end()) {
-            if (cfgManager.getString(name).empty()) {
+            if (cfgManager.getString(name).empty() && cfgManager.getString(name + ".font").empty()) {
                 continue;
             }
             DraggableText *text = nullptr;
