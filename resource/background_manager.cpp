@@ -36,18 +36,10 @@ void BackgroundManager::update() {
 
 void BackgroundManager::render(SDL_Renderer *renderer) {
     int delay = ConfigManager::getInstance().getInt("cfg.delay", 1);
-#ifdef UBUNTU
-    if (delay * 60 < showedFrames && delay > 0) {
-        setNextStyle(renderer);
-        showedFrames = 0;
-    }
-#else
     if (delay < showedFrames && delay > 0) {
         setNextStyle(renderer);
         showedFrames = 0;
     }
-#endif
-
     background = TextureManager::getInstance().getFrameTexture(animIndex);
     if (background) {
         int texWidth, texHeight;
@@ -71,7 +63,7 @@ void BackgroundManager::render(SDL_Renderer *renderer) {
 }
 
 void BackgroundManager::setStyle(uint32_t key, SDL_Renderer *renderer) {
-    std::cout << "切换到主题: " << key << std::endl;
+    std::cout << "Switching to theme: " << key << std::endl;
     showedFrames = 0;
     animIndex = 0;
     ConfigManager::getInstance().setConfigIndex(key);

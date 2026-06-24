@@ -31,6 +31,8 @@ public class ConfigKeyInfo {
         add("hardware.screen_height", "272");
         add("gui.show_cursor", "0");
         add("performance.max_fps", "1");
+
+        // time
         add("time.font", "");
         add("time.size", "48");
         add("time.color", "0x7ECF2AFF");
@@ -38,6 +40,8 @@ public class ConfigKeyInfo {
         add("time.outlineSize", "2");
         add("time.x", "280");
         add("time.y", "206");
+
+        // date
         add("date.font", "");
         add("date.size", "24");
         add("date.color", "126,207,42,255");
@@ -45,6 +49,8 @@ public class ConfigKeyInfo {
         add("date.outlineSize", "2");
         add("date.x", "340");
         add("date.y", "179");
+
+        // fps
         add("fps.font", "");
         add("fps.size", "12");
         add("fps.color", "0x7ECF2AFF");
@@ -52,27 +58,67 @@ public class ConfigKeyInfo {
         add("fps.outlineSize", "1");
         add("fps.x", "9");
         add("fps.y", "252");
-        add("cpu_state.font", "");
-        add("cpu_state.size", "12");
-        add("cpu_state.color", "0x7ECF2AFF");
-        add("cpu_state.colorOutline", "0xFFFFFFFF");
-        add("cpu_state.outlineSize", "1");
-        add("cpu_state.x", "302");
-        add("cpu_state.y", "2");
+
+        // cpu_usage
+        add("cpu_usage.font", "");
+        add("cpu_usage.size", "24");
+        add("cpu_usage.color", "0x7ECF2AFF");
+        add("cpu_usage.colorOutline", "0xFFFFFFFF");
+        add("cpu_usage.outlineSize", "2");
+        add("cpu_usage.x", "15");
+        add("cpu_usage.y", "1");
+        add("cpu_usage.mode", "1");
+        add("cpu_usage.progress_width", "100");
+        add("cpu_usage.progress_height", "10");
+        add("cpu_usage.progress_min", "0");
+        add("cpu_usage.progress_max", "100");
+
+        // cpu_temp
+        add("cpu_temp.font", "");
+        add("cpu_temp.size", "24");
+        add("cpu_temp.color", "0x7ECF2AFF");
+        add("cpu_temp.colorOutline", "0xFFFFFFFF");
+        add("cpu_temp.outlineSize", "2");
+        add("cpu_temp.x", "16");
+        add("cpu_temp.y", "100");
+
+        // memory_state
         add("memory_state.font", "");
-        add("memory_state.size", "12");
+        add("memory_state.size", "24");
         add("memory_state.color", "0x7ECF2AFF");
         add("memory_state.colorOutline", "0xFFFFFFFF");
         add("memory_state.outlineSize", "2");
-        add("memory_state.x", "302");
-        add("memory_state.y", "20");
+        add("memory_state.x", "16");
+        add("memory_state.y", "35");
+        add("memory_state.mode", "2");
+        add("memory_state.progress_width", "80");
+        add("memory_state.progress_height", "8");
+        add("memory_state.progress_min", "0");
+        add("memory_state.progress_max", "100");
+
+        // storage_state
         add("storage_state.font", "");
-        add("storage_state.size", "12");
+        add("storage_state.size", "24");
         add("storage_state.color", "0x7ECF2AFF");
         add("storage_state.colorOutline", "0xFFFFFFFF");
         add("storage_state.outlineSize", "2");
-        add("storage_state.x", "302");
-        add("storage_state.y", "38");
+        add("storage_state.x", "16");
+        add("storage_state.y", "68");
+        add("storage_state.mode", "2");
+        add("storage_state.progress_width", "80");
+        add("storage_state.progress_height", "8");
+        add("storage_state.progress_min", "0");
+        add("storage_state.progress_max", "100");
+
+        // ip_state
+        add("ip_state.font", "");
+        add("ip_state.size", "18");
+        add("ip_state.color", "0x7ECF2AFF");
+        add("ip_state.colorOutline", "0xFFFFFFFF");
+        add("ip_state.outlineSize", "1");
+        add("ip_state.x", "20");
+        add("ip_state.y", "125");
+        add("ip_state.interface", "");
     }
 
     private void add(String key, String defaultValue) {

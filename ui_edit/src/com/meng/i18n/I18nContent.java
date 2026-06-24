@@ -223,6 +223,12 @@ public abstract class I18nContent {
     /** Status: Created new theme X */
     public abstract String getStatusCreatedTheme(String name);
 
+    /** Status: Position updated */
+    public abstract String getStatusPositionUpdated(String prefix, int x, int y);
+
+    /** Status: Color updated */
+    public abstract String getStatusColorUpdated(String prefix);
+
     /** Status: Dynamic background */
     public abstract String getDynamicBackgroundText();
 
@@ -242,6 +248,9 @@ public abstract class I18nContent {
 
     /** Preview: Cannot decode image */
     public abstract String getCannotDecodeImageText();
+
+    /** Preview: No preview available */
+    public abstract String getNoPreviewAvailableText();
 
     // ========== Language Info ==========
 

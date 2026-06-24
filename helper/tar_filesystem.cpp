@@ -4,7 +4,37 @@
 #include <sstream>
 #include <SDL2/SDL_image.h>
 
-// 将八进制字符串转换为整数
+// Read config.ini content directly from tar file (scan headers, without loading entire tar into memory)
+std::string MemoryTarFileSystem::readConfigFromTar(const std::string &tarPath) {
+    std::ifstream file(tarPath, std::ios::binary);
+    if (!file) {
+        std::cerr << "Cannot open tar file: " << tarPath << std::endl;
+        return "";
+    }
+    TarHeader header;
+    while (file.read(reinterpret_cast<char *>(&header), sizeof(TarHeader))) {
+        if (header.name[0] == '\0') break;  // End marker
+        long file_size = octal_to_long(header.size, sizeof(header.size));
+    // Find config.ini
+        if ((header.typeflag == '0' || header.typeflag == '\0') &&
+            std::string(header.name) == "config.ini") {
+            if (file_size > 0) {
+                std::string content(static_cast<size_t>(file_size), '\0');
+                file.read(&content[0], file_size);
+                return content;
+            }
+            return "";  // Empty file
+        }
+        // Skip current file data (with 512-byte alignment)
+        if (file_size > 0) {
+            long padding = (512 - (file_size % 512)) % 512;
+            file.seekg(file_size + padding, std::ios::cur);
+        }
+    }
+    return "";  // config.ini not found
+}
+
+// Convert octal string to long
 long MemoryTarFileSystem::octal_to_long(const char *str, size_t len) {
     long value = 0;
     for (size_t i = 0; i < len && str[i] != '\0'; i++) {
@@ -15,11 +45,11 @@ long MemoryTarFileSystem::octal_to_long(const char *str, size_t len) {
     return value;
 }
 
-// 加载tar文件到内存
+// Load tar file into memory
 bool MemoryTarFileSystem::loadTar(const std::string &filename) {
     std::ifstream file(filename, std::ios::binary);
     if (!file) {
-        std::cerr << "无法打开tar文件: " << filename << std::endl;
+        std::cerr << "Cannot open tar file: " << filename << std::endl;
         return false;
     }
 
@@ -28,9 +58,9 @@ bool MemoryTarFileSystem::loadTar(const std::string &filename) {
         file.read(reinterpret_cast<char *>(&header), sizeof(TarHeader));
 
         if (file.gcount() == 0) break;
-        if (header.name[0] == '\0') break; // 结束标记
+        if (header.name[0] == '\0') break; // End marker
 
-        // 只处理普通文件和空文件
+        // Only process regular files and empty files
         if (header.typeflag == '0' || header.typeflag == '\0') {
             long file_size = octal_to_long(header.size, sizeof(header.size));
             std::string filename_str(header.name);
@@ -43,7 +73,7 @@ bool MemoryTarFileSystem::loadTar(const std::string &filename) {
                 file_info.data.resize(file_size);
                 file.read(file_info.data.data(), file_size);
 
-                // 跳过填充字节（tar文件按512字节对齐）
+                // Skip padding bytes (tar files are 512-byte aligned)
                 long padding = (512 - (file_size % 512)) % 512;
                 if (padding > 0) {
                     file.seekg(padding, std::ios::cur);
@@ -53,7 +83,7 @@ bool MemoryTarFileSystem::loadTar(const std::string &filename) {
             files[filename_str] = std::move(file_info);
             std::cout << "load file: " << filename_str << " (" << file_size << " Bytes)" << std::endl;
         } else {
-            // 对于非普通文件，跳过数据区
+    // Private: for non-regular files, skip data
             long file_size = octal_to_long(header.size, sizeof(header.size));
             if (file_size > 0) {
                 long padding = (512 - (file_size % 512)) % 512;
@@ -62,11 +92,11 @@ bool MemoryTarFileSystem::loadTar(const std::string &filename) {
         }
     }
 
-    std::cout << "load " << files.size() << " files into RAM" << std::endl;
+    std::cout << "load " << files.size() << " files into memory" << std::endl;
     return true;
 }
 
-// 获取文件列表
+// Get file list
 std::vector<std::string> MemoryTarFileSystem::listFiles() const {
     std::vector<std::string> result;
     for (const auto &pair: files) {
@@ -75,12 +105,12 @@ std::vector<std::string> MemoryTarFileSystem::listFiles() const {
     return result;
 }
 
-// 检查文件是否存在
+// Check if file exists
 bool MemoryTarFileSystem::fileExists(const std::string &filename) const {
     return files.find(filename) != files.end();
 }
 
-// 获取文件内容（只读指针）
+// Get file content (read-only pointer)
 const char *MemoryTarFileSystem::getFileData(const std::string &filename) const {
     auto it = files.find(filename);
     if (it != files.end() && !it->second.data.empty()) {
@@ -89,7 +119,7 @@ const char *MemoryTarFileSystem::getFileData(const std::string &filename) const 
     return nullptr;
 }
 
-// 获取文件大小
+// Get file size
 size_t MemoryTarFileSystem::getFileSize(const std::string &filename) const {
     auto it = files.find(filename);
     if (it != files.end()) {
@@ -98,7 +128,7 @@ size_t MemoryTarFileSystem::getFileSize(const std::string &filename) const {
     return 0;
 }
 
-// 获取文件内容的字符串形式
+// Get file content as string
 std::string MemoryTarFileSystem::getFileAsString(const std::string &filename) const {
     auto it = files.find(filename);
     if (it != files.end() && !it->second.data.empty()) {
@@ -107,7 +137,7 @@ std::string MemoryTarFileSystem::getFileAsString(const std::string &filename) co
     return "";
 }
 
-// 创建内存中的istream（用于其他库读取）
+// Create in-memory istream (for use by other libraries)
 std::unique_ptr<std::istream> MemoryTarFileSystem::createFileStream(const std::string &filename) const {
     auto it = files.find(filename);
     if (it != files.end() && !it->second.data.empty()) {
@@ -119,7 +149,7 @@ std::unique_ptr<std::istream> MemoryTarFileSystem::createFileStream(const std::s
     return nullptr;
 }
 
-// 将文件保存到实际文件系统（调试用）
+// Save file to actual filesystem (for debugging)
 bool MemoryTarFileSystem::saveToDisk(const std::string &filename, const std::string &output_path) const {
     auto it = files.find(filename);
     if (it == files.end()) {
@@ -144,23 +174,23 @@ SDL_RWops *MemoryTarFileSystem::createRWOps(const std::string &filename) const {
         return nullptr;
     }
 
-    // 创建RWops从内存数据
+        // Create RWops from memory data
     SDL_RWops *rw = SDL_RWFromConstMem(it->second.data.data(), it->second.size);
     return rw;
 }
 
-// 使用SDL_image从内存加载纹理
+// Load texture from memory using SDL_image
 SDL_Texture *MemoryTarFileSystem::loadTexture(SDL_Renderer *renderer, const std::string &filename) {
     SDL_RWops *rw = createRWOps(filename);
     if (!rw) {
-        std::cerr << "无法为文件创建RWops: " << filename << std::endl;
+        std::cerr << "Cannot create RWops for file: " << filename << std::endl;
         return nullptr;
     }
 
-    // 使用SDL_image加载图像
-    SDL_Surface *surface = IMG_Load_RW(rw, 1); // 1表示自动关闭RWops
+    // Use SDL_image to load image
+    SDL_Surface *surface = IMG_Load_RW(rw, 1); // 1 means auto-close RWops
     if (!surface) {
-        std::cerr << "无法加载图像: " << filename << " - " << IMG_GetError() << std::endl;
+        std::cerr << "Cannot load image: " << filename << " - " << IMG_GetError() << std::endl;
         return nullptr;
     }
 
@@ -168,41 +198,41 @@ SDL_Texture *MemoryTarFileSystem::loadTexture(SDL_Renderer *renderer, const std:
     SDL_FreeSurface(surface);
 
     if (!texture) {
-        std::cerr << "无法创建纹理: " << filename << " - " << SDL_GetError() << std::endl;
+        std::cerr << "Cannot create texture: " << filename << " - " << SDL_GetError() << std::endl;
     }
 
     return texture;
 }
 
-// 加载BMP图像（不使用SDL_image）
+// Load BMP image (without using SDL_image)
 SDL_Surface *MemoryTarFileSystem::loadBMP(const std::string &filename) {
     SDL_RWops *rw = createRWOps(filename);
     if (!rw) {
         return nullptr;
     }
 
-    SDL_Surface *surface = SDL_LoadBMP_RW(rw, 1); // 1表示自动关闭RWops
+    SDL_Surface *surface = SDL_LoadBMP_RW(rw, 1); // 1 means auto-close RWops
     return surface;
 }
 
-// 从内存加载字体
+// Load font from memory
 TTF_Font *MemoryTarFileSystem::loadFont(const std::string &filename, int ptsize) {
     SDL_RWops *rw = createRWOps(filename);
     if (!rw) {
-        std::cerr << "无法为字体文件创建RWops: " << filename << std::endl;
+        std::cerr << "Cannot create RWops for font file: " << filename << std::endl;
         return nullptr;
     }
 
-    // 使用SDL_ttf从RWops加载字体
-    TTF_Font *font = TTF_OpenFontRW(rw, 1, ptsize); // 1表示自动关闭RWops
+    // Use SDL_ttf to load font from RWops
+    TTF_Font *font = TTF_OpenFontRW(rw, 1, ptsize); // 1 means auto-close RWops
     if (!font) {
-        std::cerr << "无法加载字体: " << filename << " - " << TTF_GetError() << std::endl;
+        std::cerr << "Cannot load font: " << filename << " - " << TTF_GetError() << std::endl;
     }
 
     return font;
 }
 
-// 从内存加载字体（带样式参数）
+// Load font from memory (with style parameters)
 TTF_Font *MemoryTarFileSystem::loadFont(const std::string &filename, int ptsize, long style) {
     TTF_Font *font = loadFont(filename, ptsize);
     if (font) {

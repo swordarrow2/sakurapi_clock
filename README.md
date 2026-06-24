@@ -110,6 +110,10 @@ root@sakurapi-rk3308b:~/sakurapi_clock/build$ ./sakurapi_clock theme_sanae
 
 The program will launch with the specified theme and automatically package the theme into the `build/theme` directory
 
+#### custom theme
+
+Read `config.ini` in `themes/theme_sanae/`,then edit it.
+
 #### Auto-start on Boot
 
 Run the program with `--autorun` to install a systemd service for auto-start on boot:
@@ -131,8 +135,8 @@ Useful commands:
 #### Others
 
 
-1. The code distinguishes between armbian/debian and ubuntu for conditional compilation.
+1. The code distinguishes between armbian/debian and other OS for conditional compilation.
 
-The program compiled in the armbian/debian environment is a normal clock program. The program compiled under Ubuntu will create a new window where interface elements can be dragged and their positions displayed, facilitating custom theme creation.
+The program compiled in the armbian/debian environment is a normal clock program. The program compiled under other OS will create a new window where interface elements can be dragged and their positions displayed, facilitating custom theme creation.
 
 2. Currently learning C++, the code is entirely created through incantation magic and Java experience.

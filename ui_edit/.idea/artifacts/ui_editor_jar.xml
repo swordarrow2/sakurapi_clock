@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="ui_editor:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/ui_editor_jar</output-path>
+    <root id="archive" name="ui_editor.jar">
+      <element id="module-output" name="ui_edit" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/lib/gson-2.8.5.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

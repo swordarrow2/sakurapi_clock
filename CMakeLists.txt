@@ -8,9 +8,8 @@ set(CMAKE_CXX_STANDARD 14)
 message(STATUS "System: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
-# 检测Linux发行版
+# 检测环境类型：Debian/Armbian 为生产环境(PRD)，其余为开发环境(DEV)
 if (UNIX AND NOT APPLE)
-    # 读取 /etc/os-release 来检测具体发行版
     execute_process(
             COMMAND bash -c "grep ^ID= /etc/os-release | cut -d= -f2 | tr -d '\\\"'"
             OUTPUT_VARIABLE OS_ID
@@ -18,66 +17,15 @@ if (UNIX AND NOT APPLE)
             RESULT_VARIABLE OS_ID_RESULT
     )
 
-    execute_process(
-            COMMAND bash -c "grep ^NAME= /etc/os-release | cut -d= -f2 | tr -d '\\\"'"
-            OUTPUT_VARIABLE OS_NAME
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            RESULT_VARIABLE OS_NAME_RESULT
-    )
-
-    if (OS_ID_RESULT EQUAL 0)
-        message(STATUS "Linux Distribution ID: ${OS_ID}")
-        message(STATUS "Linux Distribution Name: ${OS_NAME}")
-
-        # 设置平台定义
-        if (OS_ID STREQUAL "ubuntu")
-            message(STATUS "Ubuntu detected - adding UBUNTU definition")
-            add_definitions(-DUBUNTU)
-            set(PLATFORM_UBUNTU 1)
-
-        elseif (OS_ID STREQUAL "armbian")
-            message(STATUS "Armbian detected - adding ARMBIAN definition")
-            add_definitions(-DARMBIAN)
-            add_definitions(-DDEBIAN)
-            set(PLATFORM_ARMBIAN 1)
-
-        elseif (OS_ID STREQUAL "debian")
-            message(STATUS "Debian detected - adding DEBIAN definition")
-            add_definitions(-DARMBIAN)
-            add_definitions(-DDEBIAN)
-            set(PLATFORM_DEBIAN 1)
-
-        else ()
-            message(STATUS "Other Linux distribution: ${OS_ID}")
-            add_definitions(-DLINUX)
-        endif ()
+    if (OS_ID_RESULT EQUAL 0 AND (OS_ID STREQUAL "debian" OR OS_ID STREQUAL "armbian"))
+        message(STATUS "Production environment detected: ${OS_ID}")
+        add_definitions(-DPRD)
+        set(PLATFORM_PRODUCTION 1)
     else ()
-        message(WARNING "Cannot determine Linux distribution, using generic Linux")
-        add_definitions(-DLINUX)
+        message(STATUS "Development environment detected: ${OS_ID}")
+        add_definitions(-DDEV)
+        set(PLATFORM_DEVELOPMENT 1)
     endif ()
-
-    # 检测是否是ARM架构
-    execute_process(
-            COMMAND uname -m
-            OUTPUT_VARIABLE ARCH
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    message(STATUS "Architecture: ${ARCH}")
-
-    if (ARCH MATCHES "arm" OR ARCH MATCHES "aarch64")
-        message(STATUS "ARM architecture detected - adding ARM_ARCH definition")
-        add_definitions(-DARM_ARCH)
-        set(ARM_ARCHITECTURE 1)
-    endif ()
-
-elseif (WIN32)
-    message(STATUS "Windows detected - adding WINDOWS definition")
-    add_definitions(-DWINDOWS)
-
-elseif (APPLE)
-    message(STATUS "macOS detected - adding MACOS definition")
-    add_definitions(-DMACOS)
-
 endif ()
 
 
@@ -97,14 +45,11 @@ include_directories(
         /usr/include/libdrm
         /usr/include/SDL2)
 
-# 根据平台调整包含目录和链接库
-if (PLATFORM_ARMBIAN)
-    message(STATUS "Configuring for Armbian specific settings")
-    # Armbian可能需要额外的包含路径或库
-    # include_directories(/usr/arm-linux-gnueabihf/include)
-elseif (PLATFORM_UBUNTU)
-    message(STATUS "Configuring for Ubuntu specific settings")
-    # Ubuntu特定设置
+# 根据环境调整配置
+if (PLATFORM_PRODUCTION)
+    message(STATUS "Configuring for production environment")
+else ()
+    message(STATUS "Configuring for development environment")
 endif ()
 
 
@@ -125,11 +70,11 @@ add_executable(sakurapi_clock
         widget/texts/time_text.cpp
         widget/texts/date_text.cpp
         widget/texts/fps_text.cpp
-        widget/texts/cpu_text.cpp
+        widget/texts/cpu_usage_text.cpp
+        widget/texts/cpu_temp_text.cpp
         widget/texts/memory_text.cpp
-        widget/texts/memory_text.h
         widget/texts/storage_text.cpp
-        widget/texts/storage_text.h
+        widget/texts/ip_text.cpp
 )
 
 # 链接库

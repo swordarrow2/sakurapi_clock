@@ -72,7 +72,7 @@ void DraggableText::setFont(TTF_Font *font) {
 
 bool DraggableText::handleEvent(SDL_Event *e) {
     if (e->type == SDL_MOUSEBUTTONDOWN) {
-        // 检查鼠标是否在文本区域内
+        // Check if mouse is within text area
         int x, y;
         SDL_GetMouseState(&x, &y);
         if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
@@ -150,25 +150,25 @@ void DraggableText::updateTexture(SDL_Renderer *renderer) {
 void DraggableText::createOutlinedTextTexture(SDL_Renderer *renderer,
                                               SDL_Color textColor,
                                               SDL_Color outlineColor, int outlineSize) {
-    // 获取原始文字尺寸
+    // Get original text dimensions
     int textWidth, textHeight;
     if (TTF_SizeText(font, text.c_str(), &textWidth, &textHeight) != 0 || textWidth == 0) {
         return;
     }
-    // 计算带描边的纹理尺寸
+    // Calculate texture size with outline
     int totalWidth = textWidth + outlineSize * 2;
     int totalHeight = textHeight + outlineSize * 2;
-    // 创建透明背景的表面
+    // Create a transparent surface
     SDL_Surface *finalSurface = SDL_CreateRGBSurfaceWithFormat(0, totalWidth, totalHeight, 32, SDL_PIXELFORMAT_RGBA32);
     if (!finalSurface) {
         return;
     }
-    // 设置表面为透明
+    // Make surface transparent
     SDL_FillRect(finalSurface, NULL, SDL_MapRGBA(finalSurface->format, 0, 0, 0, 0));
-    // 1. 先渲染描边文字（在多个偏移位置）
+    // 1. Render outline text at multiple offset positions
     SDL_Surface *outlineSurface = TTF_RenderText_Blended(font, text.c_str(), outlineColor);
     if (outlineSurface) {
-        // 在8个方向绘制描边
+        // Render outline in 8 directions
         int directions[8][2] = {
             {-outlineSize, -outlineSize}, {0, -outlineSize}, {outlineSize, -outlineSize},
             {-outlineSize, 0}, {outlineSize, 0},
@@ -185,7 +185,7 @@ void DraggableText::createOutlinedTextTexture(SDL_Renderer *renderer,
         }
         SDL_FreeSurface(outlineSurface);
     }
-    // 2. 再渲染主体文字（在中心位置）
+    // 2. Render main text at center position
     SDL_Surface *textSurface = TTF_RenderText_Blended(font, text.c_str(), textColor);
     if (textSurface) {
         SDL_Rect destRect = {outlineSize, outlineSize, textWidth, textHeight};
@@ -195,7 +195,7 @@ void DraggableText::createOutlinedTextTexture(SDL_Renderer *renderer,
     if (texture) {
         SDL_DestroyTexture(texture);
     }
-    // 转换为纹理
+    // Convert to texture
     texture = SDL_CreateTextureFromSurface(renderer, finalSurface);
     rect.w = totalWidth;
     rect.h = totalHeight;

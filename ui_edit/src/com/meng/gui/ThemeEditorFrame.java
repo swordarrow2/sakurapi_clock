@@ -6,18 +6,12 @@ import com.meng.service.MemoryTheme;
 import com.meng.service.ThemeItem;
 import com.meng.service.ThemeService;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Main GUI window for the theme package editor.
@@ -30,7 +24,7 @@ public class ThemeEditorFrame extends JFrame {
     private final DefaultListModel<String> themeListModel = new DefaultListModel<>();
     private final JList<String> themeList = new JList<>(themeListModel);
     private final ConfigEditorPanel configEditor;
-    private final JLabel imagePreviewLabel = new JLabel();
+    private final DraggablePreviewPanel previewPanel;
     private final JLabel statusBar = new JLabel();
 
     // UI components for language switching
@@ -63,6 +57,7 @@ public class ThemeEditorFrame extends JFrame {
         String baseDir = System.getProperty("user.dir");
         service = new ThemeService(baseDir, "../themes", "themes");
         configEditor = new ConfigEditorPanel(service);
+        previewPanel = new DraggablePreviewPanel(service);
         
         // Set callback for real-time preview update
         configEditor.setOnConfigChanged(() -> {
@@ -74,6 +69,16 @@ public class ThemeEditorFrame extends JFrame {
         // Set callbacks for toolbar buttons
         configEditor.setOnSaveAction(() -> saveConfig());
         configEditor.setOnOpenFolderAction(() -> openThemeFolder());
+        
+        // Set callback for position updates from draggable preview
+        previewPanel.setPositionUpdateCallback((prefix, newX, newY) -> {
+            updatePositionInConfig(prefix, newX, newY);
+        });
+        
+        // Set callback for color updates from draggable preview
+        previewPanel.setColorUpdateCallback((prefix, colorValue, outlineColorValue) -> {
+            updateColorInConfig(prefix, colorValue, outlineColorValue);
+        });
 
         initMenuBar();
         initUI();
@@ -207,12 +212,10 @@ public class ThemeEditorFrame extends JFrame {
         rightSplit.setLeftComponent(editorPanel);
 
         // Preview panel (right of editor)
-        JPanel previewPanel = new JPanel(new BorderLayout(5, 5));
-        previewPanel.setBorder(BorderFactory.createTitledBorder(i18n.getPreviewTabTitle()));
-        imagePreviewLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        imagePreviewLabel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
-        previewPanel.add(imagePreviewLabel, BorderLayout.CENTER);
-        rightSplit.setRightComponent(previewPanel);
+        JPanel previewContainer = new JPanel(new BorderLayout(5, 5));
+        previewContainer.setBorder(BorderFactory.createTitledBorder(i18n.getPreviewTabTitle()));
+        previewContainer.add(new JScrollPane(previewPanel), BorderLayout.CENTER);
+        rightSplit.setRightComponent(previewContainer);
 
         mainSplit.setRightComponent(rightSplit);
 
@@ -243,7 +246,7 @@ public class ThemeEditorFrame extends JFrame {
         ThemeItem item = service.resolveItem(display);
         if (item == null) return;
 
-        imagePreviewLabel.setIcon(null);
+        previewPanel.clear();
         configEditor.clear();
 
         // Load theme into MemoryTheme (DIR or TAR — same in-memory model)
@@ -257,8 +260,7 @@ public class ThemeEditorFrame extends JFrame {
         }
 
         if (err != null) {
-            imagePreviewLabel.setIcon(null);
-            imagePreviewLabel.setText(i18n.getCannotPreviewText() + ": " + err);
+            previewPanel.clear();
             statusBar.setText(" " + item.name + " — " + err);
             return;
         }
@@ -284,19 +286,19 @@ public class ThemeEditorFrame extends JFrame {
     private void updatePreview() {
         MemoryTheme theme = service.getCurrentTheme();
         if (theme == null) {
-            imagePreviewLabel.setIcon(null);
+            previewPanel.clear();
             return;
         }
         
         // Show image preview (from in-memory bytes for TAR / filesystem for DIR)
         if (theme.sourceType == MemoryTheme.SourceType.DIR) {
             String imgPath = service.getBackgroundImagePath(theme.name);
-            if (imgPath != null) showImagePreview(imgPath);
-            else imagePreviewLabel.setIcon(null);
+            if (imgPath != null) previewPanel.loadImage(imgPath);
+            else previewPanel.clear();
         } else {
             byte[] imgData = theme.getBackgroundImage() != null ? theme.getBackgroundImage().data : null;
-            if (imgData != null) showImagePreviewFromBytes(imgData);
-            else imagePreviewLabel.setIcon(null);
+            if (imgData != null) previewPanel.loadImageFromBytes(imgData);
+            else previewPanel.clear();
         }
     }
 
@@ -438,254 +440,42 @@ public class ThemeEditorFrame extends JFrame {
         }
     }
 
-    private void showImagePreview(String imagePath) {
-        I18nContent i18n = I18nManager.getInstance().getCurrent();
-        try {
-            BufferedImage originalImg = ImageIO.read(new File(imagePath));
-            if (originalImg == null) {
-                imagePreviewLabel.setIcon(null);
-                imagePreviewLabel.setText(i18n.getCannotDecodeImageText());
-                return;
-            }
-            int w = getPreviewWidth();
-            int h = getPreviewHeight();
-            if (w <= 0) w = originalImg.getWidth();
-            if (h <= 0) h = originalImg.getHeight();
-            
-            BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = img.createGraphics();
-            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            g.drawImage(originalImg, 0, 0, w, h, null);
-            drawTextOverlay(g, w, h);
-            g.dispose();
-            
-            imagePreviewLabel.setIcon(new ImageIcon(img));
-            imagePreviewLabel.setText(null);
-        } catch (Exception e) {
-            imagePreviewLabel.setIcon(null);
-            imagePreviewLabel.setText(i18n.getCannotPreviewText());
-        }
-    }
-
-    private void showImagePreviewFromBytes(byte[] imageData) {
-        I18nContent i18n = I18nManager.getInstance().getCurrent();
-        try {
-            BufferedImage originalImg = ImageIO.read(new ByteArrayInputStream(imageData));
-            if (originalImg == null) {
-                imagePreviewLabel.setIcon(null);
-                imagePreviewLabel.setText(i18n.getCannotDecodeImageText());
-                return;
-            }
-            int w = getPreviewWidth();
-            int h = getPreviewHeight();
-            if (w <= 0) w = originalImg.getWidth();
-            if (h <= 0) h = originalImg.getHeight();
-            
-            BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g = img.createGraphics();
-            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            g.drawImage(originalImg, 0, 0, w, h, null);
-            drawTextOverlay(g, w, h);
-            g.dispose();
-            
-            imagePreviewLabel.setIcon(new ImageIcon(img));
-            imagePreviewLabel.setText(null);
-        } catch (IOException e) {
-            imagePreviewLabel.setIcon(null);
-            imagePreviewLabel.setText(i18n.getCannotPreviewText());
-        }
-    }
-
     /**
-     * Draw text overlay on the preview image based on config.
+     * Update position values in config when text element is dragged.
+     * Updates both the service and the config editor table.
      */
-    private void drawTextOverlay(Graphics2D g, int width, int height) {
-        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    private void updatePositionInConfig(String prefix, int newX, int newY) {
+        // Update service values
+        service.setValue(prefix + ".x", String.valueOf(newX));
+        service.setValue(prefix + ".y", String.valueOf(newY));
         
-        // Draw time (HH:mm:ss)
-        drawTextElement(g, "time", new SimpleDateFormat("HH:mm:ss").format(new Date()));
-        // Draw date (yyyy-MM-dd)
-        drawTextElement(g, "date", new SimpleDateFormat("yyyy-MM-dd").format(new Date()));
-        // Draw FPS (sample value)
-        drawTextElement(g, "fps", "FPS: 60");
-        // Draw CPU state (sample value)
-        drawTextElement(g, "cpu_state", "CPU: 45%");
-        // Draw memory state (sample value)
-        drawTextElement(g, "memory_state", "MEM: 128M");
-        // Draw storage state (sample value)
-        drawTextElement(g, "storage_state", "SD: 1.2G");
+        // Update config editor table
+        configEditor.updateKeyValue(prefix + ".x", String.valueOf(newX));
+        configEditor.updateKeyValue(prefix + ".y", String.valueOf(newY));
+        
+        // Refresh preview to show updated positions
+        previewPanel.repaint();
+        
+        // Update status bar
+        I18nContent i18n = I18nManager.getInstance().getCurrent();
+        statusBar.setText(" " + i18n.getStatusPositionUpdated(prefix, newX, newY));
     }
-
+    
     /**
-     * Draw a single text element with outline.
-     * Uses SDL-style coordinate system: (x, y) is top-left corner of text.
-     * Returns true if drawn, false if not configured.
+     * Update color values in config when auto-detected from background.
+     * Updates both the service and the config editor table.
      */
-    private boolean drawTextElement(Graphics2D g, String prefix, String text) {
-        try {
-            // Check if this element is configured (section exists and has keys)
-            if (service.getCurrentTheme() == null) return false;
-            Map<String, String> section = service.getCurrentTheme().getConfig().getSection(prefix);
-            if (section.isEmpty()) return false;  // Not configured, skip drawing
-            
-            int size = getIntValue(prefix + ".size", 12);
-            int x = getIntValue(prefix + ".x", 0);
-            int y = getIntValue(prefix + ".y", 0);
-            Color color = parseColor(service.getValue(prefix + ".color"));
-            Color outlineColor = parseColor(service.getValue(prefix + ".colorOutline"));
-            int outlineSize = getIntValue(prefix + ".outlineSize", 2);  // Default outline size is 2
-            
-            // Load font if specified
-            Font font = null;
-            boolean fontError = false;
-            String fontFile = service.getValue(prefix + ".font");
-            if (fontFile != null && !fontFile.isEmpty()) {
-                try {
-                    font = loadFont(fontFile, size);
-                } catch (Exception e) {
-                    fontError = true;
-                    font = new Font("SansSerif", Font.PLAIN, size);
-                }
-            }
-            if (font == null) {
-                font = new Font("SansSerif", Font.PLAIN, size);
-            }
-            g.setFont(font);
-            
-            // If font error, show error message instead
-            String drawText = fontError ? prefix + " font error" : text;
-            
-            // Get font metrics to convert from top-left to baseline
-            FontMetrics fm = g.getFontMetrics(font);
-            int baselineY = y + fm.getAscent();  // Convert top to baseline
-            
-            // Default outline color is white (255,255,255) if not configured
-            if (outlineColor == null) {
-                outlineColor = new Color(255, 255, 255);
-            }
-            
-            // Draw outline first (SDL-style: 8 directions)
-            if (outlineSize > 0) {
-                g.setColor(fontError ? Color.RED : outlineColor);
-                int[][] directions = {
-                    {-outlineSize, -outlineSize}, {0, -outlineSize}, {outlineSize, -outlineSize},
-                    {-outlineSize, 0}, {outlineSize, 0},
-                    {-outlineSize, outlineSize}, {0, outlineSize}, {outlineSize, outlineSize}
-                };
-                for (int[] dir : directions) {
-                    g.drawString(drawText, x + dir[0], baselineY + dir[1]);
-                }
-            }
-            
-            // Draw main text
-            if (color != null || fontError) {
-                g.setColor(fontError ? Color.RED : color);
-                g.drawString(drawText, x, baselineY);
-            }
-            return true;
-        } catch (Exception e) {
-            // Ignore drawing errors
-            return false;
-        }
-    }
-
-    /**
-     * Parse color from config value.
-     * Supports formats: "0xRRGGBBAA", "0xRRGGBB", "R,G,B,A", "R,G,B"
-     */
-    private Color parseColor(String value) {
-        if (value == null || value.isEmpty()) return null;
-        try {
-            if (value.startsWith("0x") || value.startsWith("0X")) {
-                long hex = Long.parseLong(value.substring(2), 16);
-                if (value.length() > 8) { // 0xRRGGBBAA
-                    int a = (int) ((hex >> 0) & 0xFF);
-                    int b = (int) ((hex >> 8) & 0xFF);
-                    int g = (int) ((hex >> 16) & 0xFF);
-                    int r = (int) ((hex >> 24) & 0xFF);
-                    return new Color(r, g, b, a);
-                } else { // 0xRRGGBB
-                    int b = (int) ((hex >> 0) & 0xFF);
-                    int g = (int) ((hex >> 8) & 0xFF);
-                    int r = (int) ((hex >> 16) & 0xFF);
-                    return new Color(r, g, b, 255);
-                }
-            } else {
-                String[] parts = value.split(",");
-                if (parts.length >= 3) {
-                    int r = Integer.parseInt(parts[0].trim());
-                    int g = Integer.parseInt(parts[1].trim());
-                    int b = Integer.parseInt(parts[2].trim());
-                    int a = parts.length >= 4 ? Integer.parseInt(parts[3].trim()) : 255;
-                    return new Color(r, g, b, a);
-                }
-            }
-        } catch (Exception e) {
-            // Ignore parse errors
-        }
-        return null;
-    }
-
-    /**
-     * Load font from file.
-     */
-    private Font loadFont(String fontFile, float size) throws IOException, FontFormatException {
-        // Try to find font in current theme
-        byte[] fontData = null;
-        if (service.getCurrentTheme() != null) {
-            for (MemoryTheme.MemoryFile f : service.getCurrentTheme().getFiles()) {
-                if (f.name.equals(fontFile) || f.name.endsWith("/" + fontFile)) {
-                    fontData = f.data;
-                    break;
-                }
-            }
-        }
-        if (fontData != null) {
-            Font baseFont = Font.createFont(Font.TRUETYPE_FONT, new ByteArrayInputStream(fontData));
-            return baseFont.deriveFont(size);
-        }
-        // Try filesystem path
-        String basePath = service.getCurrentTheme() != null ? service.getCurrentTheme().sourcePath : "";
-        File file = new File(basePath, fontFile);
-        if (file.exists()) {
-            Font baseFont = Font.createFont(Font.TRUETYPE_FONT, file);
-            return baseFont.deriveFont(size);
-        }
-        return new Font("SansSerif", Font.PLAIN, (int) size);
-    }
-
-    /**
-     * Get integer config value with default.
-     */
-    private int getIntValue(String key, int defaultValue) {
-        try {
-            String v = service.getValue(key);
-            if (v != null && !v.isEmpty()) return Integer.parseInt(v);
-        } catch (Exception ignored) {}
-        return defaultValue;
-    }
-
-    /**
-     * Get the configured screen width from the current theme config.
-     * Falls back to image original width if not configured.
-     */
-    private int getPreviewWidth() {
-        try {
-            String w = service.getValue("hardware.screen_width");
-            if (w != null && !w.isEmpty()) return Integer.parseInt(w);
-        } catch (Exception ignored) {}
-        return -1;
-    }
-
-    /**
-     * Get the configured screen height from the current theme config.
-     * Falls back to image original height if not configured.
-     */
-    private int getPreviewHeight() {
-        try {
-            String h = service.getValue("hardware.screen_height");
-            if (h != null && !h.isEmpty()) return Integer.parseInt(h);
-        } catch (Exception ignored) {}
-        return -1;
+    private void updateColorInConfig(String prefix, String colorValue, String outlineColorValue) {
+        // Update service values
+        service.setValue(prefix + ".color", colorValue);
+        service.setValue(prefix + ".colorOutline", outlineColorValue);
+        
+        // Update config editor table
+        configEditor.updateKeyValue(prefix + ".color", colorValue);
+        configEditor.updateKeyValue(prefix + ".colorOutline", outlineColorValue);
+        
+        // Update status bar
+        I18nContent i18n = I18nManager.getInstance().getCurrent();
+        statusBar.setText(" " + i18n.getStatusColorUpdated(prefix));
     }
 }

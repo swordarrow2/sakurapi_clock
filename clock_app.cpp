@@ -12,7 +12,7 @@
 uint32_t frameStart = SDL_GetTicks();
 uint32_t frameTime = 0;
 
-int max_fps = 60;
+int max_fps = 0;
 
 bool frameDrop = false;
 
@@ -45,7 +45,7 @@ void ClockApp::consoleInputThread() {
 }
 
 void ClockApp::processCommand(const std::string &command) {
-    std::cout << "处理命令: " << command << std::endl;
+    std::cout << "Processing command: " << command << std::endl;
     if (command == "quit" || command == "exit") {
         running = false;
     } else if (command == "n") {
@@ -53,19 +53,19 @@ void ClockApp::processCommand(const std::string &command) {
     } else if (command == "p") {
         BackgroundManager::getInstance().setPreStyle(renderer);
     } else if (command == "help") {
-        std::cout << "可用命令:" << std::endl;
-        std::cout << "  quit/exit - 退出程序" << std::endl;
-        std::cout << "  next/switch - 切换到下一个背景" << std::endl;
-        std::cout << "  prev/previous - 切换到上一个背景" << std::endl;
-        std::cout << "  help - 显示帮助信息" << std::endl;
+        std::cout << "Available commands:" << std::endl;
+        std::cout << "  quit/exit - Quit the program" << std::endl;
+        std::cout << "  next/switch - Switch to next background" << std::endl;
+        std::cout << "  prev/previous - Switch to previous background" << std::endl;
+        std::cout << "  help - Show this help message" << std::endl;
     } else {
-        std::cout << "未知命令: " << command << std::endl;
-        std::cout << "输入 'help' 查看可用命令" << std::endl;
+        std::cout << "Unknown command: " << command << std::endl;
+        std::cout << "Type 'help' to see available commands" << std::endl;
     }
 }
 
 bool ClockApp::initialize() {
-#ifdef ARMBIAN
+#ifdef PRD
     setenv("SDL_VIDEODRIVER", "kmsdrm", 1);
 #endif
 
@@ -94,14 +94,14 @@ bool ClockApp::initSDL() {
 }
 
 bool ClockApp::createWindow() {
-#ifdef UBUNTU
+#ifdef DEV
     window = SDL_CreateWindow(
-        "嘤嘤表", // 窗口标题
-        SDL_WINDOWPOS_CENTERED, // x位置
-        SDL_WINDOWPOS_CENTERED, // y位置
-        screenWidth, // 宽度
-        screenHeight, // 高度
-        SDL_WINDOW_SHOWN // 窗口标志
+        "Sakurapi Clock", // Window title
+        SDL_WINDOWPOS_CENTERED, // x position
+        SDL_WINDOWPOS_CENTERED, // y position
+        screenWidth, // Width
+        screenHeight, // Height
+        SDL_WINDOW_SHOWN // Window flags
     );
 #else
     window = SDL_CreateWindow("clock",
@@ -138,14 +138,14 @@ bool ClockApp::loadResources() {
 }
 
 void ClockApp::run() {
-    // 主循环
+    // Main loop
     while (running) {
         try {
             frameStart = SDL_GetTicks();
             handleEvents();
             update();
             render();
-            // 处理控制台命令
+            // Process console commands
             std::string command;
             std::unique_lock<std::mutex> lock(commandMutex);
             if (commandCV.wait_for(lock, std::chrono::milliseconds(0), [this] { return !commandQueue.empty(); })) {
@@ -179,18 +179,13 @@ void ClockApp::handleEvents() {
 }
 
 void ClockApp::update() {
-#ifdef UBUNTU
     max_fps = ConfigManager::getInstance().getInt("performance.max_fps");
-    SDL_ShowCursor(SDL_ENABLE);
-#else
-    max_fps = ConfigManager::getInstance().getInt("performance.max_fps");
-    max_fps < 1 ? 1 : max_fps;
+    if (max_fps < 1) max_fps = 1;
     if (ConfigManager::getInstance().getInt("gui.show_cursor")) {
         SDL_ShowCursor(SDL_ENABLE);
     } else {
         SDL_ShowCursor(SDL_DISABLE);
     }
-#endif
     BackgroundManager::getInstance().update();
     TextManager::getInstance().update();
 }
@@ -200,6 +195,7 @@ void ClockApp::render() {
         frameDrop = false;
         return;
     }
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
     BackgroundManager::getInstance().render(renderer);
     TextManager::getInstance().render(renderer);

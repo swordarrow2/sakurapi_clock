@@ -18,11 +18,11 @@ private:
 
     std::unordered_map<std::string, FileInfo> files;
 
-    // 将八进制字符串转换为整数
-    long octal_to_long(const char *str, size_t len);
+    // Convert octal string to long
+    static long octal_to_long(const char *str, size_t len);
 
 public:
-    // Tar文件头结构
+    // Tar header structure
     struct TarHeader {
         char name[100];
         char mode[8];
@@ -43,42 +43,45 @@ public:
         char padding[12];
     };
 
-    // 加载tar文件到内存
+    // Load tar file into memory
     bool loadTar(const std::string &filename);
 
-    // 获取文件列表
+    // Read config.ini content directly from tar file (without keeping tar in memory)
+    static std::string readConfigFromTar(const std::string &tarPath);
+
+    // Get file list
     std::vector<std::string> listFiles() const;
 
-    // 检查文件是否存在
+    // Check if file exists
     bool fileExists(const std::string &filename) const;
 
-    // 获取文件内容（只读指针）
+    // Get file content (read-only pointer)
     const char *getFileData(const std::string &filename) const;
 
-    // 获取文件大小
+    // Get file size
     size_t getFileSize(const std::string &filename) const;
 
-    // 获取文件内容的字符串形式
+    // Get file content as string
     std::string getFileAsString(const std::string &filename) const;
 
-    // 创建内存中的istream（用于其他库读取）
+    // Create in-memory istream (for use by other libraries)
     std::unique_ptr<std::istream> createFileStream(const std::string &filename) const;
 
-    // 将文件保存到实际文件系统（调试用）
+    // Save file to actual filesystem (for debugging)
     bool saveToDisk(const std::string &filename, const std::string &output_path) const;
 
     SDL_RWops *createRWOps(const std::string &filename) const;
 
-    // 使用SDL_image从内存加载纹理
+    // Load texture from memory using SDL_image
     SDL_Texture *loadTexture(SDL_Renderer *renderer, const std::string &filename);
 
-    // 加载BMP图像（不使用SDL_image）
+    // Load BMP image (without using SDL_image)
     SDL_Surface *loadBMP(const std::string &filename);
 
-    // 从内存加载字体
+    // Load font from memory
     TTF_Font *loadFont(const std::string &filename, int ptsize);
 
-    // 从内存加载字体（带样式参数）
+    // Load font from memory (with style parameters)
     TTF_Font *loadFont(const std::string &filename, int ptsize, long style);
 };
 

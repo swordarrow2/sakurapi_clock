@@ -2,40 +2,39 @@
 // Created by sjf on 2025/10/4.
 //
 
-#include "memory_text.h"
+#include "cpu_usage_text.h"
 
 #include <iomanip>
-#include <sstream>
 
 #include "../../helper/config_manager.h"
 
-void MemoryText::init(const std::string &name, const std::string &text, TTF_Font *textFont, SDL_Color textColor,
-                      SDL_Color outlineColor, int outlineSize, int initialX, int initialY) {
+void CpuUsageText::init(const std::string &name, const std::string &text, TTF_Font *textFont, SDL_Color textColor,
+                        SDL_Color outlineColor, int outlineSize, int initialX, int initialY) {
     DraggableText::init(name, text, textFont, textColor, outlineColor, outlineSize, initialX, initialY);
     updateCount = ConfigManager::getInstance().getInt("performance.max_fps");
-    progressBarWidth = ConfigManager::getInstance().getInt("memory_state.progress_width", 80);
-    progressBarHeight = ConfigManager::getInstance().getInt("memory_state.progress_height", 8);
-    displayMode = ConfigManager::getInstance().getInt("memory_state.mode", 2);
-    progressMin = ConfigManager::getInstance().getFloat("memory_state.progress_min", 0.0f);
-    progressMax = ConfigManager::getInstance().getFloat("memory_state.progress_max", 100.0f);
+    progressBarWidth = ConfigManager::getInstance().getInt("cpu_usage.progress_width", 80);
+    progressBarHeight = ConfigManager::getInstance().getInt("cpu_usage.progress_height", 8);
+    displayMode = ConfigManager::getInstance().getInt("cpu_usage.mode", 2);
+    progressMin = ConfigManager::getInstance().getFloat("cpu_usage.progress_min", 0.0f);
+    progressMax = ConfigManager::getInstance().getFloat("cpu_usage.progress_max", 100.0f);
 }
 
-void MemoryText::update() {
+void CpuUsageText::update() {
     if (updateCount == ConfigManager::getInstance().getInt("performance.max_fps")) {
-        memoryInfo = getMemoryInfo();
+        cpuInfo.usage = getCpuUsage();
         if (displayMode == 0 || displayMode == 2) {
             std::stringstream ss;
-            ss << "RAM " << std::fixed << std::setprecision(21) << std::setw(5) << memoryInfo.usagePercent << "%";
+            ss << "CPU " << std::fixed << std::setprecision(1) << std::setw(5) << cpuInfo.usage << "%";
             setText(ss.str());
         } else if (displayMode == 1) {
-            setText("RAM");
+            setText("CPU");
         }
         updateCount = 0;
     }
     updateCount++;
 }
 
-SDL_Color MemoryText::getProgressColor(float percent) {
+SDL_Color CpuUsageText::getProgressColor(float percent) {
     if (percent < 50.0f) {
         return (SDL_Color){80, 200, 120, 255};
     } else if (percent < 75.0f) {
@@ -45,8 +44,7 @@ SDL_Color MemoryText::getProgressColor(float percent) {
     }
 }
 
-void MemoryText::drawProgressBar(SDL_Renderer *renderer, int x, int y, int width, int height,
-                                 float percent, SDL_Color bg_color, SDL_Color fg_color) {
+void CpuUsageText::drawProgressBar(SDL_Renderer *renderer, int x, int y, int width, int height, float percent) {
     int radius = height / 2;
     if (radius > width / 2) radius = width / 2;
 
@@ -68,8 +66,8 @@ void MemoryText::drawProgressBar(SDL_Renderer *renderer, int x, int y, int width
 
     int progressWidth = (int) ((width - 4) * percent / 100.0f);
     if (progressWidth > 0) {
-        SDL_Color progressColor = getProgressColor(percent);
-        SDL_SetRenderDrawColor(renderer, progressColor.r, progressColor.g, progressColor.b, progressColor.a);
+        SDL_Color fgColor = getProgressColor(percent);
+        SDL_SetRenderDrawColor(renderer, fgColor.r, fgColor.g, fgColor.b, fgColor.a);
 
         int innerRadius = (height - 4) / 2;
         if (innerRadius > (width - 4) / 2) innerRadius = (width - 4) / 2;
@@ -91,10 +89,10 @@ void MemoryText::drawProgressBar(SDL_Renderer *renderer, int x, int y, int width
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 }
 
-void MemoryText::render(SDL_Renderer *renderer) {
+void CpuUsageText::render(SDL_Renderer *renderer) {
     if (displayMode == 0 || displayMode == 1 || displayMode == 2) {
         int textWidth, textHeight;
-        const char *fixedLabel = (displayMode == 0) ? "100.0%" : ((displayMode == 1) ? "RAM" : "RAM 100.0%");
+        const char *fixedLabel = (displayMode == 0) ? "100.0%" : ((displayMode == 1) ? "CPU" : "CPU 100.0%");
         TTF_SizeText(font, fixedLabel, &textWidth, &textHeight);
 
         if (texture) {
@@ -112,36 +110,41 @@ void MemoryText::render(SDL_Renderer *renderer) {
 
     if (displayMode == 1 || displayMode == 2) {
         int textWidth, textHeight;
-        TTF_SizeText(font, "RAM 100.0%", &textWidth, &textHeight);
+        TTF_SizeText(font, "CPU 100.0%", &textWidth, &textHeight);
 
         float range = progressMax - progressMin;
-        float normalized = (range > 0.0f) ? (memoryInfo.usagePercent - progressMin) / range * 100.0f : 0.0f;
+        float normalized = (range > 0.0f) ? (cpuInfo.usage - progressMin) / range * 100.0f : 0.0f;
         if (normalized < 0.0f) normalized = 0.0f;
         if (normalized > 100.0f) normalized = 100.0f;
 
         int barX = rect.x + rect.w + 8;
         int barY = rect.y + (textHeight - progressBarHeight) / 2;
-        drawProgressBar(renderer, barX, barY, progressBarWidth, progressBarHeight, normalized,
-                        (SDL_Color){0, 0, 0, 0}, (SDL_Color){0, 0, 0, 0});
+        drawProgressBar(renderer, barX, barY, progressBarWidth, progressBarHeight, normalized);
     }
 }
 
-MemoryText::MemoryInfo MemoryText::getMemoryInfo() {
-    MemoryInfo mem = {0};
-    FILE *file = fopen("/proc/meminfo", "r");
-    if (!file) return mem;
+float CpuUsageText::getCpuUsage() {
+    FILE *file = fopen("/proc/stat", "r");
+    if (!file) return 0.0;
 
-    char line[128];
-    while (fgets(line, sizeof(line), file)) {
-        if (sscanf(line, "MemTotal: %lu kB", &mem.total) == 1) {
-            mem.total /= 1024; // Convert to MB
-        } else if (sscanf(line, "MemFree: %lu kB", &mem.free) == 1) {
-            mem.free /= 1024;
-        } else if (sscanf(line, "MemAvailable: %lu kB", &mem.available) == 1) {
-            mem.available /= 1024;
-        }
-    }
-    mem.usagePercent = 100.0f * (mem.total - mem.available) / mem.total;
+    unsigned long user, nice, system, idle, iowait, irq, softirq;
+    fscanf(file, "cpu %lu %lu %lu %lu %lu %lu %lu",
+           &user, &nice, &system, &idle, &iowait, &irq, &softirq);
     fclose(file);
-    return mem;
+
+    static unsigned long prev_idle = 0, prev_total = 0;
+    unsigned long idle_time = idle + iowait;
+    unsigned long total_time = user + nice + system + idle + iowait + irq + softirq;
+
+    float usage = 0.0;
+    if (prev_total > 0) {
+        unsigned long total_diff = total_time - prev_total;
+        unsigned long idle_diff = idle_time - prev_idle;
+        usage = (float) (total_diff - idle_diff) / total_diff * 100.0f;
+    }
+
+    prev_idle = idle_time;
+    prev_total = total_time;
+
+    return usage;
 }

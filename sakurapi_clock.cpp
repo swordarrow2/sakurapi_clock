@@ -17,7 +17,7 @@ using std::endl;
 using std::cerr;
 using std::cout;
 
-// 获取当前可执行文件的绝对路径
+// Get absolute path of current executable
 std::string getExecutablePath() {
     char result[PATH_MAX];
     ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
@@ -28,7 +28,7 @@ std::string getExecutablePath() {
     return "";
 }
 
-// 获取当前工作目录
+// Get current working directory
 std::string getWorkingDirectory() {
     char cwd[PATH_MAX];
     if (getcwd(cwd, sizeof(cwd)) != nullptr) {
@@ -37,9 +37,9 @@ std::string getWorkingDirectory() {
     return "";
 }
 
-// 安装systemd开机自启服务
+// Install systemd auto-start service
 bool installAutoRunService() {
-    // 检查是否以root权限运行
+    // Check if running with root privileges
     if (getuid() != 0) {
         cerr << "Error: --autorun requires root privileges. Please run with sudo." << endl;
         return false;
@@ -57,7 +57,7 @@ bool installAutoRunService() {
         return false;
     }
 
-    // systemd服务文件内容
+    // systemd service file content
     std::string serviceContent = "[Unit]\n"
         "Description=Clock Display Service\n"
         "After=systemd-udev-settle.service\n"
@@ -79,7 +79,7 @@ bool installAutoRunService() {
         "[Install]\n"
         "WantedBy=multi-user.target\n";
 
-    // 写入服务文件
+    // Write service file
     std::string servicePath = "/etc/systemd/system/sakurapi_clock.service";
     std::ofstream serviceFile(servicePath);
     if (!serviceFile.is_open()) {
@@ -93,14 +93,14 @@ bool installAutoRunService() {
     cout << "Executable path: " << execPath << endl;
     cout << "Working directory: " << workDir << endl;
 
-    // 重新加载systemd配置
+    // Reload systemd configuration
     cout << "Reloading systemd daemon..." << endl;
     int ret = system("systemctl daemon-reload");
     if (ret != 0) {
         cerr << "Warning: systemctl daemon-reload returned non-zero." << endl;
     }
 
-    // 启用服务
+    // Enable service
     cout << "Enabling sakurapi_clock service..." << endl;
     ret = system("systemctl enable sakurapi_clock.service");
     if (ret != 0) {
@@ -119,7 +119,7 @@ bool installAutoRunService() {
     return true;
 }
 
-// 打包所有主题
+// Pack all themes
 int packAllThemes(const std::string &themeDirectory) {
     std::string themesPath = "../" + themeDirectory;
     DIR *dir = opendir(themesPath.c_str());
@@ -185,12 +185,7 @@ void printUsage() {
 }
 
 int main(int argc, char *argv[]) {
-    // #ifdef ARMBIAN
-    // std::string themeDirectory = "/sakurapi_clock_themes";
-    // #elif defined(UBUNTU)
     std::string themeDirectory = "themes";
-    // #endif
-
     std::string arg = (argc > 1) ? argv[1] : "";
 
     if (arg == "--help") {

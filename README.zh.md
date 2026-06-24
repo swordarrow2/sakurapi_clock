@@ -1,6 +1,6 @@
 # sakurapi_clock
 
-中文 | [English](README.en.md)
+中文 | [English](README.md)
 
 #### 介绍
 为樱花派设计的桌面时钟。樱花派：https://docs.sakurapi.org/article/sakurapi-rk3308b/introduce
@@ -112,7 +112,7 @@ root@sakurapi-rk3308b:~/sakurapi_clock/build$ ./sakurapi_clock theme_sanae
 
 #### 自行设计主题
 
-可参考themes/theme_sakura_pi主题的config.ini进行修改
+可参考themes/theme_sanae主题的config.ini进行修改
 
 #### 开机自启
 
@@ -135,8 +135,8 @@ sudo ./sakurapi_clock --autorun
 #### 其它
 
 
-1. 代码中区分armbian/debian和ubuntu进行条件编译。
+1. 代码中区分armbian/debian和其它操作系统进行条件编译。
 
-armbian/debian环境下编译出的是正常的时钟程序，Ubuntu下编译出的程序会新建一个窗口，同时界面元素可以拖动并显示元素位置，方便自行制作主题。
+armbian/debian环境下编译出的是正常的时钟程序，其它操作系统下编译出的程序会新建一个窗口，同时界面元素可以拖动并显示元素位置，方便自行制作主题。
 
-1. 正在学习c++，代码全靠咏唱魔法和jvav经验。
+1. 正在学习c++，代码全靠咏唱魔法和~~jvav~~java经验。

@@ -18,20 +18,20 @@ bool TarPacker::executeTarCommand(const std::vector<std::string> &args) {
 }
 
 bool TarPacker::packDirectory(const std::string &sourceDir, const std::string &outputTarFile) {
-    // 检查源目录是否存在
+    // Check if source directory exists
     struct stat info;
     if (stat(sourceDir.c_str(), &info) != 0 || !(info.st_mode & S_IFDIR)) {
         std::cerr << "Source directory does not exist: " << sourceDir << std::endl;
         return false;
     }
-    // 获取目录中的所有文件
+    // Get all files in directory
     std::vector<std::string> files;
     DIR *dir;
     struct dirent *ent;
     if ((dir = opendir(sourceDir.c_str())) != NULL) {
         while ((ent = readdir(dir)) != NULL) {
             std::string filename = ent->d_name;
-            // 跳过当前目录和父目录
+            // Skip current and parent directory
             if (filename != "." && filename != "..") {
                 files.push_back(filename);
             }
@@ -53,7 +53,7 @@ bool TarPacker::packDirectory(const std::string &sourceDir, const std::string &o
 }
 
 bool TarPacker::unpackDirectory(const std::string &tarFile, const std::string &targetDir) {
-    // 创建目标目录（如果不存在）
+    // Create target directory (if it doesn't exist)
     struct stat info;
     if (stat(targetDir.c_str(), &info) != 0) {
         std::string createDir = "mkdir -p " + targetDir;

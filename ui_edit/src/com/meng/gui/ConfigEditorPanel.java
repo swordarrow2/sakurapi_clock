@@ -234,6 +234,23 @@ public class ConfigEditorPanel extends JPanel {
         I18nContent i18n = I18nManager.getInstance().getCurrent();
         statusLabel.setText(i18n.getStatusNoConfig());
     }
+    
+    /**
+     * Update a key-value pair in the table.
+     * If the key exists, updates its value; otherwise adds a new row.
+     */
+    public void updateKeyValue(String key, String value) {
+        // Find existing row with this key
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            String existingKey = (String) tableModel.getValueAt(i, 0);
+            if (existingKey != null && existingKey.equals(key)) {
+                tableModel.setValueAt(value, i, 1);
+                return;
+            }
+        }
+        // Key not found, add new row
+        tableModel.addRow(new Object[]{key, value});
+    }
 
     /**
      * Set callback for config changes (for preview update).

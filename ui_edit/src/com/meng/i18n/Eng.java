@@ -303,6 +303,12 @@ public class Eng extends I18nContent {
     public String getStatusCreatedTheme(String name) { return "Created new theme: " + name; }
 
     @Override
+    public String getStatusPositionUpdated(String prefix, int x, int y) { return prefix + " position updated: (" + x + ", " + y + ")"; }
+
+    @Override
+    public String getStatusColorUpdated(String prefix) { return prefix + " color auto-set"; }
+
+    @Override
     public String getDynamicBackgroundText() { return "Dynamic background"; }
 
     @Override
@@ -321,6 +327,9 @@ public class Eng extends I18nContent {
 
     @Override
     public String getCannotDecodeImageText() { return "Cannot decode image"; }
+
+    @Override
+    public String getNoPreviewAvailableText() { return "No preview available"; }
 
     // ========== Language Info ==========
 

@@ -26,7 +26,7 @@ bool TextureManager::init(SDL_Renderer *renderer) {
             }
         }
         texturesMap.clear();
-        backgroundFrames.clear(); // 清空帧列表
+        backgroundFrames.clear(); // Clear frame list
         std::string bgDir = ConfigManager::getInstance().getString("background.dir");
         if (!bgDir.empty()) {
             processImageFolder(bgDir, renderer);
@@ -52,7 +52,7 @@ void TextureManager::processImageFolder(const std::string &folderPath, SDL_Rende
         return;
     }
     std::vector<std::string> allFiles = tarFS->listFiles();
-    // 临时存储文件信息，用于排序
+    // Temporary storage for file info, used for sorting
     struct FileInfo {
         std::string path;
         std::string name;
@@ -62,39 +62,39 @@ void TextureManager::processImageFolder(const std::string &folderPath, SDL_Rende
 
     for (const std::string &filePath: allFiles) {
         if (filePath.find(folderPath + "/") != 0) {
-            continue; // 文件不在目标文件夹中
+            continue; // File not in target folder
         }
-        // 提取文件名（不含路径）
+        // Extract filename (without path)
         size_t lastSlash = filePath.find_last_of('/');
         std::string fileName = (lastSlash != std::string::npos) ? filePath.substr(lastSlash + 1) : filePath;
-        // 跳过 "." 和 ".."
+        // Skip "." and ".."
         if (fileName == "." || fileName == "..") {
             continue;
         }
-        // 提取文件扩展名
+        // Extract file extension
         size_t dotPos = fileName.find_last_of('.');
         if (dotPos == std::string::npos) {
-            continue; // 没有扩展名
+            continue; // No extension
         }
         std::string extension = fileName.substr(dotPos);
         std::string lowerExtension = extension;
         std::transform(lowerExtension.begin(), lowerExtension.end(), lowerExtension.begin(), ::tolower);
-        // 检查是否是图片文件
+        // Check if it's an image file
         if (std::find(imageExtensions.begin(), imageExtensions.end(), lowerExtension) != imageExtensions.end()) {
-            // 生成纹理键名：bg_文件名
+            // Generate texture key: bg_filename
             std::string textureKey = "bg_" + fileName;
-            // 存储文件信息用于排序
+            // Store file info for sorting
             imageFiles.push_back({filePath, fileName, textureKey});
         }
     }
-    // 按文件名排序（确保动画帧顺序正确）
+    // Sort by filename (to ensure correct animation frame order)
     std::sort(imageFiles.begin(), imageFiles.end(),
               [](const FileInfo &a, const FileInfo &b) {
                   return a.name < b.name;
               });
-    // 按排序后的顺序加载纹理
+    // Load textures in sorted order
     for (const auto &fileInfo: imageFiles) {
-        // 加载纹理
+        // Load texture
         SDL_Texture *texture = loadTexture(fileInfo.path, renderer);
         if (texture) {
             texturesMap[fileInfo.key] = texture;

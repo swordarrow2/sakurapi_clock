@@ -31,7 +31,14 @@ public:
 private:
     StorageInfo getStorageInfo(const char *path);
 
+    SDL_Color getProgressColor(float percent);
+
     uint32_t updateCount;
+    int progressBarWidth;
+    int progressBarHeight;
+    int displayMode;
+    float progressMin;
+    float progressMax;
 };
 
 #endif //SAKURAPI_CLOCK_STORAGE_TEXT_H

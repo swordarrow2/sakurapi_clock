@@ -37,9 +37,9 @@ private:
 
     void cleanup();
 
-    void consoleInputThread(); // 控制台输入线程函数
+    void consoleInputThread(); // Console input thread function
 
-    // 处理控制台命令
+    // Process console commands
     void processCommand(const std::string &command);
 
     SDL_Window *window;
@@ -49,7 +49,7 @@ private:
     const int screenWidth;
     const int screenHeight;
 
-    // 控制台输入相关
+    // Console input related
     std::thread consoleThread;
     std::atomic<bool> consoleThreadRunning;
     std::mutex commandMutex;

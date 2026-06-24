@@ -15,10 +15,12 @@ namespace Globals {
     extern const std::string key_time;
     extern const std::string key_date;
     extern const std::string key_fps;
-    extern const std::string key_cpu_state;
+    extern const std::string key_cpu_usage;
+    extern const std::string key_cpu_temp;
     extern const std::string key_memory_state;
     extern const std::string key_storage_state;
-    extern const std::string elements[6];
+    extern const std::string key_ip_state;
+    extern const std::string elements[8];
 };
 
 

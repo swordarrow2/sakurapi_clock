@@ -33,6 +33,8 @@ public:
 
     size_t getConfigCount() const;
 
+    static const vector<string> &getKnownConfigKeys();
+
 private:
     ConfigManager() = default;
 
@@ -46,6 +48,7 @@ private:
 
     vector<map<string, string> > configDatas;
     vector<std::unique_ptr<MemoryTarFileSystem> > tarFileSystems;
+    vector<string> tarFilePaths;
     int currentIndex = 0;
 };
 

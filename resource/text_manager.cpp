@@ -12,9 +12,11 @@
 #include "../widget/texts/time_text.h"
 #include "../widget/texts/date_text.h"
 #include "../widget/texts/fps_text.h"
-#include "../widget/texts/cpu_text.h"
+#include "../widget/texts/cpu_usage_text.h"
+#include "../widget/texts/cpu_temp_text.h"
 #include "../widget/texts/memory_text.h"
 #include "../widget/texts/storage_text.h"
+#include "../widget/texts/ip_text.h"
 
 using std::vector;
 
@@ -61,12 +63,16 @@ void TextManager::init() {
                 text = new DateText();
             } else if (name == Globals::key_fps) {
                 text = new FpsText();
-            } else if (name == Globals::key_cpu_state) {
-                text = new CpuText();
+            } else if (name == Globals::key_cpu_usage) {
+                text = new CpuUsageText();
+            } else if (name == Globals::key_cpu_temp) {
+                text = new CpuTempText();
             } else if (name == Globals::key_memory_state) {
                 text = new MemoryText();
             } else if (name == Globals::key_storage_state) {
                 text = new StorageText();
+            } else if (name == Globals::key_ip_state) {
+                text = new IpText();
             }
 
             if (text) {

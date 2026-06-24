@@ -303,6 +303,12 @@ public class Chn extends I18nContent {
     public String getStatusCreatedTheme(String name) { return "已创建新主题: " + name; }
 
     @Override
+    public String getStatusPositionUpdated(String prefix, int x, int y) { return prefix + " 位置已更新: (" + x + ", " + y + ")"; }
+
+    @Override
+    public String getStatusColorUpdated(String prefix) { return prefix + " 颜色已自动设置"; }
+
+    @Override
     public String getDynamicBackgroundText() { return "动态背景"; }
 
     @Override
@@ -321,6 +327,9 @@ public class Chn extends I18nContent {
 
     @Override
     public String getCannotDecodeImageText() { return "无法解码图片"; }
+
+    @Override
+    public String getNoPreviewAvailableText() { return "无预览可用"; }
 
     // ========== Language Info ==========
 
